@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Переводы - Financial Manager</title>
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+</head>
+<body>
+    <h1>Переводы</h1>
+    <form id="createTransferForm">
+        <label>Счёт-источник
+            <select name="account_from" id="accountFromSelect" required>
+                <option value="">Загрузка счетов...</option>
+            </select>
+            <small id="accountsError" style="color: red; display: none;">Сначала создайте хотя бы два счёта</small>
+        </label>
+        <label>Счёт-получатель
+            <select name="account_to" id="accountToSelect" required>
+                <option value="">Загрузка счетов...</option>
+            </select>
+        </label>
+        <label>Сумма
+            <input type="text" name="amount" placeholder="0.00" required />
+        </label>
+        <button type="submit" id="submitBtn">Создать перевод</button>
+    </form>
+
+    <h2>Список переводов</h2>
+    <div id="transfersContainer">
+        <p id="loadingMessage">Загрузка...</p>
+        <div id="emptyMessage" style="display: none;">
+            <p style="color: #666; font-style: italic;">Пока не было добавлено ни одного перевода</p>
+        </div>
+        <table id="transfersTable" style="display: none; width: 100%; border-collapse: collapse; margin-top: 1em;">
+            <thead>
+                <tr style="background-color: #f0f0f0;">
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">ID</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">От счёта</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">К счёту</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Сумма</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Дата</th>
+                </tr>
+            </thead>
+            <tbody id="transfersTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            window.location.href = '/auth/login';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        let accountsCache = {};
+
+        async function loadAccountsForDisplay() {
+            try {
+                const resp = await fetch('/accounts', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (resp.ok) {
+                    const accounts = await resp.json();
+                    accountsCache = {};
+                    accounts.forEach(acc => {
+                        accountsCache[acc.id] = acc;
+                    });
+                }
+            } catch {
+                // Игнорируем ошибку, просто не будет названий счетов
+            }
+        }
+
+        async function loadTransfers() {
+            const loadingMsg = document.getElementById('loadingMessage');
+            const emptyMsg = document.getElementById('emptyMessage');
+            const table = document.getElementById('transfersTable');
+            const tbody = document.getElementById('transfersTableBody');
+            
+            try {
+                const resp = await fetch('/transfers', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (!resp.ok) {
+                    loadingMsg.textContent = 'Ошибка загрузки переводов';
+                    return;
+                }
+                const data = await resp.json();
+                loadingMsg.style.display = 'none';
+                
+                if (!data || data.length === 0) {
+                    emptyMsg.style.display = 'block';
+                    table.style.display = 'none';
+                } else {
+                    emptyMsg.style.display = 'none';
+                    table.style.display = 'table';
+                    tbody.innerHTML = '';
+                    data.forEach(transfer => {
+                        const row = document.createElement('tr');
+                        row.style.borderBottom = '1px solid #eee';
+                        const accountFrom = accountsCache[transfer.account_from];
+                        const accountTo = accountsCache[transfer.account_to];
+                        const accountFromName = accountFrom ? `${accountFrom.account_name} (ID: ${transfer.account_from})` : `Счёт ID: ${transfer.account_from}`;
+                        const accountToName = accountTo ? `${accountTo.account_name} (ID: ${transfer.account_to})` : `Счёт ID: ${transfer.account_to}`;
+                        row.innerHTML = `
+                            <td style="padding: 0.5em;">${transfer.id}</td>
+                            <td style="padding: 0.5em;">${escapeHtml(accountFromName)}</td>
+                            <td style="padding: 0.5em;">${escapeHtml(accountToName)}</td>
+                            <td style="padding: 0.5em; font-weight: bold; color: #007bff;">${escapeHtml(transfer.amount)} ₽</td>
+                            <td style="padding: 0.5em;">${formatDate(transfer.created_at)}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch {
+                loadingMsg.textContent = 'Ошибка сети';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function loadAccounts() {
+            const selectFrom = document.getElementById('accountFromSelect');
+            const selectTo = document.getElementById('accountToSelect');
+            const errorMsg = document.getElementById('accountsError');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            try {
+                const resp = await fetch('/accounts', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (!resp.ok) {
+                    selectFrom.innerHTML = '<option value="">Ошибка загрузки счетов</option>';
+                    selectTo.innerHTML = '<option value="">Ошибка загрузки счетов</option>';
+                    return;
+                }
+                const accounts = await resp.json();
+                
+                if (!accounts || accounts.length === 0) {
+                    selectFrom.innerHTML = '<option value="">Нет доступных счетов</option>';
+                    selectTo.innerHTML = '<option value="">Нет доступных счетов</option>';
+                    selectFrom.disabled = true;
+                    selectTo.disabled = true;
+                    errorMsg.style.display = 'block';
+                    submitBtn.disabled = true;
+                } else if (accounts.length < 2) {
+                    selectFrom.innerHTML = '<option value="">Нет доступных счетов</option>';
+                    selectTo.innerHTML = '<option value="">Нет доступных счетов</option>';
+                    selectFrom.disabled = true;
+                    selectTo.disabled = true;
+                    errorMsg.style.display = 'block';
+                    errorMsg.textContent = 'Сначала создайте хотя бы два счёта';
+                    submitBtn.disabled = true;
+                } else {
+                    errorMsg.style.display = 'none';
+                    submitBtn.disabled = false;
+                    selectFrom.disabled = false;
+                    selectTo.disabled = false;
+                    
+                    const optionHtml = '<option value="">Выберите счёт</option>' + 
+                        accounts.map(acc => 
+                            `<option value="${acc.id}">${escapeHtml(acc.account_name)} (${acc.account_type}) - Баланс: ${acc.balance} ₽</option>`
+                        ).join('');
+                    
+                    selectFrom.innerHTML = optionHtml;
+                    selectTo.innerHTML = optionHtml;
+                }
+            } catch {
+                selectFrom.innerHTML = '<option value="">Ошибка сети</option>';
+                selectTo.innerHTML = '<option value="">Ошибка сети</option>';
+            }
+        }
+
+        document.getElementById('createTransferForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const accountFrom = form.account_from.value;
+            const accountTo = form.account_to.value;
+            
+            if (!accountFrom || !accountTo) {
+                alert('Пожалуйста, выберите оба счёта');
+                return;
+            }
+            
+            if (accountFrom === accountTo) {
+                alert('Счёт-источник и счёт-получатель не могут быть одинаковыми');
+                return;
+            }
+            
+            const body = {
+                account_from: Number(accountFrom),
+                account_to: Number(accountTo),
+                amount: form.amount.value
+            };
+            try {
+                const resp = await fetch('/transfers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(body)
+                });
+                const text = await resp.text();
+                if (resp.ok) {
+                    alert('Перевод создан');
+                    form.reset();
+                    loadAccounts();
+                    loadTransfers();
+                } else {
+                    alert('Ошибка: ' + text);
+                }
+            } catch {
+                alert('Ошибка сети');
+            }
+        });
+
+        // Загружаем счета и переводы при загрузке страницы
+        loadAccounts();
+        loadAccountsForDisplay().then(() => loadTransfers());
+    </script>
+</body>
+</html>
+
+

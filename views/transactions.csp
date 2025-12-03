@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Транзакции - Financial Manager</title>
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+</head>
+<body>
+    <h1>Транзакции</h1>
+    <form id="createTransactionForm">
+        <label>Счёт
+            <select name="id_account" id="accountSelect" required>
+                <option value="">Загрузка счетов...</option>
+            </select>
+            <small id="accountsError" style="color: red; display: none;">Сначала создайте хотя бы один счёт</small>
+        </label>
+        <label>Категория
+            <select name="id_category" id="categorySelect">
+                <option value="">Загрузка категорий...</option>
+            </select>
+            <small style="color: #666; font-size: 0.9em;">(необязательно)</small>
+        </label>
+        <label>Сумма
+            <input type="number" name="amount" step="0.01" min="0.01" required />
+        </label>
+        <label>Тип
+            <select name="type" required>
+                <option value="income">Доход</option>
+                <option value="expense">Расход</option>
+            </select>
+        </label>
+        <label>Описание
+            <input type="text" name="description" />
+        </label>
+        <button type="submit" id="submitBtn">Создать</button>
+    </form>
+
+    <h2>Список транзакций</h2>
+    <div id="transactionsContainer">
+        <p id="loadingMessage">Загрузка...</p>
+        <div id="emptyMessage" style="display: none;">
+            <p style="color: #666; font-style: italic;">Пока не было добавлено ни одной транзакции</p>
+        </div>
+        <table id="transactionsTable" style="display: none; width: 100%; border-collapse: collapse; margin-top: 1em;">
+            <thead>
+                <tr style="background-color: #f0f0f0;">
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">ID</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Счёт</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Сумма</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Тип</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Описание</th>
+                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Дата</th>
+                </tr>
+            </thead>
+            <tbody id="transactionsTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            window.location.href = '/auth/login';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        let accountsCache = {};
+
+        async function loadAccountsForDisplay() {
+            try {
+                const resp = await fetch('/accounts', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (resp.ok) {
+                    const accounts = await resp.json();
+                    accountsCache = {};
+                    accounts.forEach(acc => {
+                        accountsCache[acc.id] = acc;
+                    });
+                }
+            } catch {
+                // Игнорируем ошибку, просто не будет названий счетов
+            }
+        }
+
+        async function loadTransactions() {
+            const loadingMsg = document.getElementById('loadingMessage');
+            const emptyMsg = document.getElementById('emptyMessage');
+            const table = document.getElementById('transactionsTable');
+            const tbody = document.getElementById('transactionsTableBody');
+            
+            try {
+                const resp = await fetch('/transactions', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (!resp.ok) {
+                    loadingMsg.textContent = 'Ошибка загрузки транзакций';
+                    return;
+                }
+                const data = await resp.json();
+                loadingMsg.style.display = 'none';
+                
+                if (!data || data.length === 0) {
+                    emptyMsg.style.display = 'block';
+                    table.style.display = 'none';
+                } else {
+                    emptyMsg.style.display = 'none';
+                    table.style.display = 'table';
+                    tbody.innerHTML = '';
+                    data.forEach(tr => {
+                        const row = document.createElement('tr');
+                        row.style.borderBottom = '1px solid #eee';
+                        const typeText = tr.type === 'income' ? 'Доход' : 'Расход';
+                        const typeColor = tr.type === 'income' ? '#28a745' : '#dc3545';
+                        const amountColor = tr.type === 'income' ? '#28a745' : '#dc3545';
+                        const account = accountsCache[tr.id_account];
+                        const accountName = account ? `${account.account_name} (ID: ${tr.id_account})` : `Счёт ID: ${tr.id_account}`;
+                        row.innerHTML = `
+                            <td style="padding: 0.5em;">${tr.id}</td>
+                            <td style="padding: 0.5em;">${escapeHtml(accountName)}</td>
+                            <td style="padding: 0.5em; color: ${amountColor}; font-weight: bold;">${tr.type === 'income' ? '+' : '-'}${escapeHtml(tr.amount)} ₽</td>
+                            <td style="padding: 0.5em; color: ${typeColor}; font-weight: bold;">${typeText}</td>
+                            <td style="padding: 0.5em;">${escapeHtml(tr.description || '-')}</td>
+                            <td style="padding: 0.5em;">${formatDate(tr.created_at)}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch {
+                loadingMsg.textContent = 'Ошибка сети';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function loadAccounts() {
+            const select = document.getElementById('accountSelect');
+            const errorMsg = document.getElementById('accountsError');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            try {
+                const resp = await fetch('/accounts', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (!resp.ok) {
+                    select.innerHTML = '<option value="">Ошибка загрузки счетов</option>';
+                    return;
+                }
+                const accounts = await resp.json();
+                select.innerHTML = '';
+                
+                if (!accounts || accounts.length === 0) {
+                    select.innerHTML = '<option value="">Нет доступных счетов</option>';
+                    select.disabled = true;
+                    errorMsg.style.display = 'block';
+                    submitBtn.disabled = true;
+                } else {
+                    errorMsg.style.display = 'none';
+                    submitBtn.disabled = false;
+                    select.disabled = false;
+                    select.innerHTML = '<option value="">Выберите счёт</option>';
+                    accounts.forEach(acc => {
+                        const option = document.createElement('option');
+                        option.value = acc.id;
+                        option.textContent = `${acc.account_name} (${acc.account_type}) - Баланс: ${acc.balance} ₽`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch {
+                select.innerHTML = '<option value="">Ошибка сети</option>';
+            }
+        }
+
+        async function loadCategories() {
+            const select = document.getElementById('categorySelect');
+            
+            try {
+                const resp = await fetch('/categories', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (!resp.ok) {
+                    select.innerHTML = '<option value="">Ошибка загрузки категорий</option>';
+                    return;
+                }
+                const categories = await resp.json();
+                select.innerHTML = '<option value="">Не выбрано</option>';
+                
+                if (categories && categories.length > 0) {
+                    categories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.id;
+                        const typeText = cat.type === 'income' ? 'Доход' : 'Расход';
+                        option.textContent = `${cat.name} (${typeText})`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch {
+                select.innerHTML = '<option value="">Ошибка сети</option>';
+            }
+        }
+
+        document.getElementById('createTransactionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const accountId = form.id_account.value;
+            if (!accountId) {
+                alert('Пожалуйста, выберите счёт');
+                return;
+            }
+            const amountValue = parseFloat(form.amount.value);
+            if (isNaN(amountValue) || amountValue <= 0) {
+                alert('Пожалуйста, введите корректную сумму (больше 0)');
+                return;
+            }
+            
+            const body = {
+                id_account: Number(accountId),
+                amount: amountValue.toString(),
+                type: form.type.value,
+                description: form.description.value || ""
+            };
+            if (form.id_category.value) {
+                body.id_category = Number(form.id_category.value);
+            }
+            try {
+                const resp = await fetch('/transactions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(body)
+                });
+                const text = await resp.text();
+                if (resp.ok) {
+                    alert('Транзакция создана');
+                    form.reset();
+                    form.id_category.value = '';
+                    loadAccounts();
+                    loadCategories();
+                    loadAccountsForDisplay().then(() => loadTransactions());
+                } else {
+                    console.error('Transaction creation error:', resp.status, text);
+                    alert('Ошибка: ' + text);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                alert('Ошибка сети: ' + error.message);
+            }
+        });
+
+        // Загружаем счета, категории и транзакции при загрузке страницы
+        loadAccounts();
+        loadCategories();
+        loadAccountsForDisplay().then(() => loadTransactions());
+    </script>
+</body>
+</html>
+
+

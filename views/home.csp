@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Financial Manager</title>
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+</head>
+<body>
+    <h1>Выбор действия</h1>
+    <p>Выберите раздел, с которым хотите работать.</p>
+    <nav>
+        <ul>
+            <li><a href="/accounts/create">Создать счёт</a></li>
+            <li><a href="/ui/categories">Категории</a></li>
+            <li><a href="/ui/transactions">Транзакции</a></li>
+            <li><a href="/ui/budgets">Бюджеты</a></li>
+            <li><a href="/ui/transfers">Переводы</a></li>
+            <li><a href="/auth/logout">Выход из аккаунта</a></li>
+        </ul>
+    </nav>
+</body>
+</html>
+
+

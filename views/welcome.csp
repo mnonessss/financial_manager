@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Financial Manager</title>
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+</head>
+<body>
+    <h1>Financial Manager</h1>
+    <p>Добро пожаловать! Для продолжения войдите в аккаунт или зарегистрируйтесь.</p>
+    <nav>
+        <ul>
+            <li><a href="/auth/register">Регистрация</a></li>
+            <li><a href="/auth/login">Вход</a></li>
+        </ul>
+    </nav>
+</body>
+</html>
+
+
+
