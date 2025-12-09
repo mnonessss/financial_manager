@@ -23,7 +23,7 @@ const bool Users::hasPrimaryKey = true;
 const std::string Users::tableName = "\"users\"";
 
 const std::vector<typename Users::MetaData> Users::metaData_={
-{"id","int32_t","integer",4,1,1,1},
+{"id","int64_t","bigint",8,1,1,1},
 {"name","std::string","text",0,0,0,1},
 {"email","std::string","text",0,0,0,1},
 {"hashed_password","std::string","text",0,0,0,1},
@@ -40,7 +40,7 @@ Users::Users(const Row &r, const ssize_t indexOffset) noexcept
     {
         if(!r["id"].isNull())
         {
-            id_=std::make_shared<int32_t>(r["id"].as<int32_t>());
+            id_=std::make_shared<int64_t>(r["id"].as<int64_t>());
         }
         if(!r["name"].isNull())
         {
@@ -89,7 +89,7 @@ Users::Users(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 0;
         if(!r[index].isNull())
         {
-            id_=std::make_shared<int32_t>(r[index].as<int32_t>());
+            id_=std::make_shared<int64_t>(r[index].as<int64_t>());
         }
         index = offset + 1;
         if(!r[index].isNull())
@@ -145,7 +145,7 @@ Users::Users(const Json::Value &pJson, const std::vector<std::string> &pMasquera
         dirtyFlag_[0] = true;
         if(!pJson[pMasqueradingVector[0]].isNull())
         {
-            id_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[0]].asInt64());
+            id_=std::make_shared<int64_t>((int64_t)pJson[pMasqueradingVector[0]].asInt64());
         }
     }
     if(!pMasqueradingVector[1].empty() && pJson.isMember(pMasqueradingVector[1]))
@@ -207,7 +207,7 @@ Users::Users(const Json::Value &pJson) noexcept(false)
         dirtyFlag_[0]=true;
         if(!pJson["id"].isNull())
         {
-            id_=std::make_shared<int32_t>((int32_t)pJson["id"].asInt64());
+            id_=std::make_shared<int64_t>((int64_t)pJson["id"].asInt64());
         }
     }
     if(pJson.isMember("name"))
@@ -274,7 +274,7 @@ void Users::updateByMasqueradedJson(const Json::Value &pJson,
     {
         if(!pJson[pMasqueradingVector[0]].isNull())
         {
-            id_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[0]].asInt64());
+            id_=std::make_shared<int64_t>((int64_t)pJson[pMasqueradingVector[0]].asInt64());
         }
     }
     if(!pMasqueradingVector[1].empty() && pJson.isMember(pMasqueradingVector[1]))
@@ -335,7 +335,7 @@ void Users::updateByJson(const Json::Value &pJson) noexcept(false)
     {
         if(!pJson["id"].isNull())
         {
-            id_=std::make_shared<int32_t>((int32_t)pJson["id"].asInt64());
+            id_=std::make_shared<int64_t>((int64_t)pJson["id"].asInt64());
         }
     }
     if(pJson.isMember("name"))
@@ -390,20 +390,20 @@ void Users::updateByJson(const Json::Value &pJson) noexcept(false)
     }
 }
 
-const int32_t &Users::getValueOfId() const noexcept
+const int64_t &Users::getValueOfId() const noexcept
 {
-    static const int32_t defaultValue = int32_t();
+    static const int64_t defaultValue = int64_t();
     if(id_)
         return *id_;
     return defaultValue;
 }
-const std::shared_ptr<int32_t> &Users::getId() const noexcept
+const std::shared_ptr<int64_t> &Users::getId() const noexcept
 {
     return id_;
 }
-void Users::setId(const int32_t &pId) noexcept
+void Users::setId(const int64_t &pId) noexcept
 {
-    id_ = std::make_shared<int32_t>(pId);
+    id_ = std::make_shared<int64_t>(pId);
     dirtyFlag_[0] = true;
 }
 const typename Users::PrimaryKeyType & Users::getPrimaryKey() const
@@ -632,7 +632,7 @@ Json::Value Users::toJson() const
     Json::Value ret;
     if(getId())
     {
-        ret["id"]=getValueOfId();
+        ret["id"]=(Json::Int64)getValueOfId();
     }
     else
     {
@@ -688,7 +688,7 @@ Json::Value Users::toMasqueradedJson(
         {
             if(getId())
             {
-                ret[pMasqueradingVector[0]]=getValueOfId();
+                ret[pMasqueradingVector[0]]=(Json::Int64)getValueOfId();
             }
             else
             {
@@ -744,7 +744,7 @@ Json::Value Users::toMasqueradedJson(
     LOG_ERROR << "Masquerade failed";
     if(getId())
     {
-        ret["id"]=getValueOfId();
+        ret["id"]=(Json::Int64)getValueOfId();
     }
     else
     {
@@ -1003,7 +1003,7 @@ bool Users::validJsonOfField(size_t index,
                 err="The automatic primary key cannot be set";
                 return false;
             }
-            if(!pJson.isInt())
+            if(!pJson.isInt64())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;

@@ -21,6 +21,7 @@ const std::string Transactions::Cols::_amount = "\"amount\"";
 const std::string Transactions::Cols::_type = "\"type\"";
 const std::string Transactions::Cols::_description = "\"description\"";
 const std::string Transactions::Cols::_created_at = "\"created_at\"";
+const std::string Transactions::Cols::_is_family = "\"is_family\"";
 const std::string Transactions::primaryKeyName = "id";
 const bool Transactions::hasPrimaryKey = true;
 const std::string Transactions::tableName = "\"transactions\"";
@@ -33,7 +34,8 @@ const std::vector<typename Transactions::MetaData> Transactions::metaData_={
 {"amount","std::string","numeric",0,0,0,1},
 {"type","std::string","USER-DEFINED",0,0,0,1},
 {"description","std::string","text",0,0,0,0},
-{"created_at","::trantor::Date","timestamp without time zone",0,0,0,1}
+{"created_at","::trantor::Date","timestamp without time zone",0,0,0,1},
+{"is_family","bool","boolean",1,0,0,1}
 };
 const std::string &Transactions::getColumnName(size_t index) noexcept(false)
 {
@@ -94,11 +96,15 @@ Transactions::Transactions(const Row &r, const ssize_t indexOffset) noexcept
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
         }
+        if(!r["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(r["is_family"].as<bool>());
+        }
     }
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 8 > r.size())
+        if(offset + 9 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -162,13 +168,18 @@ Transactions::Transactions(const Row &r, const ssize_t indexOffset) noexcept
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
         }
+        index = offset + 8;
+        if(!r[index].isNull())
+        {
+            isFamily_=std::make_shared<bool>(r[index].as<bool>());
+        }
     }
 
 }
 
 Transactions::Transactions(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 8)
+    if(pMasqueradingVector.size() != 9)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -253,6 +264,14 @@ Transactions::Transactions(const Json::Value &pJson, const std::vector<std::stri
                 }
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
+        }
+    }
+    if(!pMasqueradingVector[8].empty() && pJson.isMember(pMasqueradingVector[8]))
+    {
+        dirtyFlag_[8] = true;
+        if(!pJson[pMasqueradingVector[8]].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson[pMasqueradingVector[8]].asBool());
         }
     }
 }
@@ -341,12 +360,20 @@ Transactions::Transactions(const Json::Value &pJson) noexcept(false)
             }
         }
     }
+    if(pJson.isMember("is_family"))
+    {
+        dirtyFlag_[8]=true;
+        if(!pJson["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson["is_family"].asBool());
+        }
+    }
 }
 
 void Transactions::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 8)
+    if(pMasqueradingVector.size() != 9)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -432,6 +459,14 @@ void Transactions::updateByMasqueradedJson(const Json::Value &pJson,
             }
         }
     }
+    if(!pMasqueradingVector[8].empty() && pJson.isMember(pMasqueradingVector[8]))
+    {
+        dirtyFlag_[8] = true;
+        if(!pJson[pMasqueradingVector[8]].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson[pMasqueradingVector[8]].asBool());
+        }
+    }
 }
 
 void Transactions::updateByJson(const Json::Value &pJson) noexcept(false)
@@ -515,6 +550,14 @@ void Transactions::updateByJson(const Json::Value &pJson) noexcept(false)
                 }
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
+        }
+    }
+    if(pJson.isMember("is_family"))
+    {
+        dirtyFlag_[8] = true;
+        if(!pJson["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson["is_family"].asBool());
         }
     }
 }
@@ -685,6 +728,23 @@ void Transactions::setCreatedAt(const ::trantor::Date &pCreatedAt) noexcept
     dirtyFlag_[7] = true;
 }
 
+const bool &Transactions::getValueOfIsFamily() const noexcept
+{
+    static const bool defaultValue = bool();
+    if(isFamily_)
+        return *isFamily_;
+    return defaultValue;
+}
+const std::shared_ptr<bool> &Transactions::getIsFamily() const noexcept
+{
+    return isFamily_;
+}
+void Transactions::setIsFamily(const bool &pIsFamily) noexcept
+{
+    isFamily_ = std::make_shared<bool>(pIsFamily);
+    dirtyFlag_[8] = true;
+}
+
 void Transactions::updateId(const uint64_t id)
 {
 }
@@ -698,7 +758,8 @@ const std::vector<std::string> &Transactions::insertColumns() noexcept
         "amount",
         "type",
         "description",
-        "created_at"
+        "created_at",
+        "is_family"
     };
     return inCols;
 }
@@ -782,6 +843,17 @@ void Transactions::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[8])
+    {
+        if(getIsFamily())
+        {
+            binder << getValueOfIsFamily();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 
 const std::vector<std::string> Transactions::updateColumns() const
@@ -814,6 +886,10 @@ const std::vector<std::string> Transactions::updateColumns() const
     if(dirtyFlag_[7])
     {
         ret.push_back(getColumnName(7));
+    }
+    if(dirtyFlag_[8])
+    {
+        ret.push_back(getColumnName(8));
     }
     return ret;
 }
@@ -897,6 +973,17 @@ void Transactions::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[8])
+    {
+        if(getIsFamily())
+        {
+            binder << getValueOfIsFamily();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 Json::Value Transactions::toJson() const
 {
@@ -965,6 +1052,14 @@ Json::Value Transactions::toJson() const
     {
         ret["created_at"]=Json::Value();
     }
+    if(getIsFamily())
+    {
+        ret["is_family"]=getValueOfIsFamily();
+    }
+    else
+    {
+        ret["is_family"]=Json::Value();
+    }
     return ret;
 }
 
@@ -977,7 +1072,7 @@ Json::Value Transactions::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 8)
+    if(pMasqueradingVector.size() == 9)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -1067,6 +1162,17 @@ Json::Value Transactions::toMasqueradedJson(
                 ret[pMasqueradingVector[7]]=Json::Value();
             }
         }
+        if(!pMasqueradingVector[8].empty())
+        {
+            if(getIsFamily())
+            {
+                ret[pMasqueradingVector[8]]=getValueOfIsFamily();
+            }
+            else
+            {
+                ret[pMasqueradingVector[8]]=Json::Value();
+            }
+        }
         return ret;
     }
     LOG_ERROR << "Masquerade failed";
@@ -1134,6 +1240,14 @@ Json::Value Transactions::toMasqueradedJson(
     {
         ret["created_at"]=Json::Value();
     }
+    if(getIsFamily())
+    {
+        ret["is_family"]=getValueOfIsFamily();
+    }
+    else
+    {
+        ret["is_family"]=Json::Value();
+    }
     return ret;
 }
 
@@ -1199,13 +1313,18 @@ bool Transactions::validateJsonForCreation(const Json::Value &pJson, std::string
         if(!validJsonOfField(7, "created_at", pJson["created_at"], err, true))
             return false;
     }
+    if(pJson.isMember("is_family"))
+    {
+        if(!validJsonOfField(8, "is_family", pJson["is_family"], err, true))
+            return false;
+    }
     return true;
 }
 bool Transactions::validateMasqueradedJsonForCreation(const Json::Value &pJson,
-                                                     const std::vector<std::string> &pMasqueradingVector,
-                                                     std::string &err)
+                                                      const std::vector<std::string> &pMasqueradingVector,
+                                                      std::string &err)
 {
-    if(pMasqueradingVector.size() != 8)
+    if(pMasqueradingVector.size() != 9)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1295,6 +1414,14 @@ bool Transactions::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                   return false;
           }
       }
+      if(!pMasqueradingVector[8].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[8]))
+          {
+              if(!validJsonOfField(8, pMasqueradingVector[8], pJson[pMasqueradingVector[8]], err, true))
+                  return false;
+          }
+      }
     }
     catch(const Json::LogicError &e)
     {
@@ -1350,13 +1477,18 @@ bool Transactions::validateJsonForUpdate(const Json::Value &pJson, std::string &
         if(!validJsonOfField(7, "created_at", pJson["created_at"], err, false))
             return false;
     }
+    if(pJson.isMember("is_family"))
+    {
+        if(!validJsonOfField(8, "is_family", pJson["is_family"], err, false))
+            return false;
+    }
     return true;
 }
 bool Transactions::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
-                                                   const std::vector<std::string> &pMasqueradingVector,
-                                                   std::string &err)
+                                                    const std::vector<std::string> &pMasqueradingVector,
+                                                    std::string &err)
 {
-    if(pMasqueradingVector.size() != 8)
+    if(pMasqueradingVector.size() != 9)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1407,6 +1539,11 @@ bool Transactions::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
           if(!validJsonOfField(7, pMasqueradingVector[7], pJson[pMasqueradingVector[7]], err, false))
               return false;
       }
+      if(!pMasqueradingVector[8].empty() && pJson.isMember(pMasqueradingVector[8]))
+      {
+          if(!validJsonOfField(8, pMasqueradingVector[8], pJson[pMasqueradingVector[8]], err, false))
+              return false;
+      }
     }
     catch(const Json::LogicError &e)
     {
@@ -1416,10 +1553,10 @@ bool Transactions::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
     return true;
 }
 bool Transactions::validJsonOfField(size_t index,
-                                   const std::string &fieldName,
-                                   const Json::Value &pJson,
-                                   std::string &err,
-                                   bool isForCreation)
+                                    const std::string &fieldName,
+                                    const Json::Value &pJson,
+                                    std::string &err,
+                                    bool isForCreation)
 {
     switch(index)
     {
@@ -1517,6 +1654,18 @@ bool Transactions::validJsonOfField(size_t index,
                 return false;
             }
             if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
+            break;
+        case 8:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isBool())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;

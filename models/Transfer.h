@@ -17,7 +17,7 @@
 #endif
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -50,6 +50,7 @@ class Transfer
         static const std::string _account_to;
         static const std::string _amount;
         static const std::string _created_at;
+        static const std::string _is_family;
     };
 
     static const int primaryKeyNumber;
@@ -150,8 +151,16 @@ class Transfer
     ///Set the value of the column created_at
     void setCreatedAt(const ::trantor::Date &pCreatedAt) noexcept;
 
+    /**  For column is_family  */
+    ///Get the value of the column is_family, returns the default value if the column is null
+    const bool &getValueOfIsFamily() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<bool> &getIsFamily() const noexcept;
+    ///Set the value of the column is_family
+    void setIsFamily(const bool &pIsFamily) noexcept;
 
-    static size_t getColumnNumber() noexcept {  return 6;  }
+
+    static size_t getColumnNumber() noexcept {  return 7;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -179,6 +188,7 @@ class Transfer
     std::shared_ptr<int32_t> accountTo_;
     std::shared_ptr<std::string> amount_;
     std::shared_ptr<::trantor::Date> createdAt_;
+    std::shared_ptr<bool> isFamily_;
     struct MetaData
     {
         const std::string colName_;
@@ -190,7 +200,7 @@ class Transfer
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[6]={ false };
+    bool dirtyFlag_[7]={ false };
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
@@ -236,6 +246,12 @@ class Transfer
         {
             needSelection=true;
         }
+        sql += "is_family,";
+        ++parametersCount;
+        if(!dirtyFlag_[6])
+        {
+            needSelection=true;
+        }
         needSelection=true;
         if(parametersCount > 0)
         {
@@ -270,6 +286,15 @@ class Transfer
             sql.append(placeholderStr, n);
         }
         if(dirtyFlag_[5])
+        {
+            n = snprintf(placeholderStr,sizeof(placeholderStr),"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        else
+        {
+            sql +="default,";
+        }
+        if(dirtyFlag_[6])
         {
             n = snprintf(placeholderStr,sizeof(placeholderStr),"$%d,",placeholder++);
             sql.append(placeholderStr, n);

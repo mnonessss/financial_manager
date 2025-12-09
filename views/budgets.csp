@@ -6,7 +6,10 @@
     <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
 </head>
 <body>
-    <h1>Бюджеты</h1>
+    <h1><% if (typeof pageTitle !== 'undefined') { %><%= pageTitle %><% } else { %>Бюджеты<% } %></h1>
+    <% if (typeof isFamily !== 'undefined' && isFamily) { %>
+        <p style="color: #666; font-style: italic;">Просмотр семейных бюджетов (только просмотр, создание недоступно)</p>
+    <% } else { %>
     <form id="createBudgetForm">
         <label>Категория
             <select name="id_category" id="categorySelect" required>
@@ -38,6 +41,8 @@
         </label>
         <button type="submit" id="submitBtn">Создать бюджет</button>
     </form>
+    <% } %>
+    <p><a href="/home">← Вернуться на главную</a></p>
 
     <h2>Список бюджетов</h2>
     <div id="budgetsContainer">
@@ -48,7 +53,6 @@
         <table id="budgetsTable" style="display: none; width: 100%; border-collapse: collapse; margin-top: 1em;">
             <thead>
                 <tr style="background-color: #f0f0f0;">
-                    <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">ID</th>
                     <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Категория</th>
                     <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Месяц</th>
                     <th style="padding: 0.5em; text-align: left; border-bottom: 2px solid #ddd;">Год</th>
@@ -61,10 +65,12 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
         if (!token) {
             window.location.href = '/auth/login';
         }
+        const urlParams = new URLSearchParams(window.location.search);
+        const isFamily = urlParams.get('family') === 'true';
 
         const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
                            'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
@@ -97,7 +103,8 @@
             const tbody = document.getElementById('budgetsTableBody');
             
             try {
-                const resp = await fetch('/budgets', {
+                const url = '/budgets' + (isFamily ? '?family=true' : '');
+                const resp = await fetch(url, {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -121,10 +128,9 @@
                         row.style.borderBottom = '1px solid #eee';
                         const monthName = monthNames[budget.month - 1] || budget.month;
                         const category = categoriesCache[budget.id_category];
-                        const categoryName = category ? `${category.name} (${category.type === 'income' ? 'Доход' : 'Расход'})` : `Категория ID: ${budget.id_category}`;
+                        const categoryName = category ? `${category.name} (${category.type === 'income' ? 'Доход' : 'Расход'})` : `Категория недоступна`;
                         row.innerHTML = `
-                            <td style="padding: 0.5em;">${budget.id}</td>
-                            <td style="padding: 0.5em;">${escapeHtml(categoryName)}</td>
+                            <td style="padding: 0.5em; word-break: break-word; white-space: normal;">${escapeHtml(categoryName)}</td>
                             <td style="padding: 0.5em;">${monthName}</td>
                             <td style="padding: 0.5em;">${budget.year}</td>
                             <td style="padding: 0.5em; font-weight: bold;">${escapeHtml(budget.limit_amount)} ₽</td>
@@ -222,7 +228,9 @@
         });
 
         // Загружаем категории и бюджеты при загрузке страницы
+        if (!isFamily) {
         loadCategories();
+        }
         loadCategoriesForDisplay().then(() => loadBudgets());
     </script>
 </body>

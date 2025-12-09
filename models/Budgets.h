@@ -17,7 +17,7 @@
 #endif
 #include <trantor/utils/Date.h>
 #include <trantor/utils/Logger.h>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -51,6 +51,7 @@ class Budgets
         static const std::string _year;
         static const std::string _limit_amount;
         static const std::string _created_at;
+        static const std::string _is_family;
     };
 
     static const int primaryKeyNumber;
@@ -159,8 +160,16 @@ class Budgets
     ///Set the value of the column created_at
     void setCreatedAt(const ::trantor::Date &pCreatedAt) noexcept;
 
+    /**  For column is_family  */
+    ///Get the value of the column is_family, returns the default value if the column is null
+    const bool &getValueOfIsFamily() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<bool> &getIsFamily() const noexcept;
+    ///Set the value of the column is_family
+    void setIsFamily(const bool &pIsFamily) noexcept;
 
-    static size_t getColumnNumber() noexcept {  return 7;  }
+
+    static size_t getColumnNumber() noexcept {  return 8;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -189,6 +198,7 @@ class Budgets
     std::shared_ptr<int32_t> year_;
     std::shared_ptr<std::string> limitAmount_;
     std::shared_ptr<::trantor::Date> createdAt_;
+    std::shared_ptr<bool> isFamily_;
     struct MetaData
     {
         const std::string colName_;
@@ -200,7 +210,7 @@ class Budgets
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[7]={ false };
+    bool dirtyFlag_[8]={ false };
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
@@ -251,6 +261,12 @@ class Budgets
         {
             needSelection=true;
         }
+        sql += "is_family,";
+        ++parametersCount;
+        if(!dirtyFlag_[7])
+        {
+            needSelection=true;
+        }
         needSelection=true;
         if(parametersCount > 0)
         {
@@ -290,6 +306,15 @@ class Budgets
             sql.append(placeholderStr, n);
         }
         if(dirtyFlag_[6])
+        {
+            n = snprintf(placeholderStr,sizeof(placeholderStr),"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        else
+        {
+            sql +="default,";
+        }
+        if(dirtyFlag_[7])
         {
             n = snprintf(placeholderStr,sizeof(placeholderStr),"$%d,",placeholder++);
             sql.append(placeholderStr, n);

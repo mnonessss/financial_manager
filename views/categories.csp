@@ -6,7 +6,10 @@
     <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
 </head>
 <body>
-    <h1>Категории</h1>
+    <h1><% if (typeof pageTitle !== 'undefined') { %><%= pageTitle %><% } else { %>Категории<% } %></h1>
+    <% if (typeof isFamily !== 'undefined' && isFamily) { %>
+        <p style="color: #666; font-style: italic;">Просмотр семейных категорий (только просмотр, создание недоступно)</p>
+    <% } else { %>
     <form id="createCategoryForm">
         <label>Название
             <input type="text" name="name" required />
@@ -19,6 +22,8 @@
         </label>
         <button type="submit">Создать</button>
     </form>
+    <% } %>
+    <p><a href="/home">← Вернуться на главную</a></p>
 
     <h2>Список категорий</h2>
     <div id="categoriesContainer">
@@ -40,10 +45,12 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
         if (!token) {
             window.location.href = '/auth/login';
         }
+        const urlParams = new URLSearchParams(window.location.search);
+        const isFamily = urlParams.get('family') === 'true';
 
         async function loadCategories() {
             const loadingMsg = document.getElementById('loadingMessage');
@@ -52,7 +59,8 @@
             const tbody = document.getElementById('categoriesTableBody');
             
             try {
-                const resp = await fetch('/categories', {
+                const url = '/categories' + (isFamily ? '?family=true' : '');
+                const resp = await fetch(url, {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }

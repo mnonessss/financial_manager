@@ -12,8 +12,8 @@ public:
     METHOD_LIST_BEGIN
         ADD_METHOD_TO(CategoryController::CreateCategory, "/categories", drogon::Post);
         ADD_METHOD_TO(CategoryController::GetCategories, "/categories", drogon::Get);
-        ADD_METHOD_TO(CategoryController::UpdateCategory, "/categories/{1}", drogon::Put);
-        ADD_METHOD_TO(CategoryController::DeleteCategory, "/categories/{1}", drogon::Delete);
+        ADD_METHOD_TO(CategoryController::UpdateCategory, "/categories/{categoryId}", drogon::Put);
+        ADD_METHOD_TO(CategoryController::DeleteCategory, "/categories/{categoryId}", drogon::Delete);
     METHOD_LIST_END
 
     drogon::Task<drogon::HttpResponsePtr> CreateCategory(drogon::HttpRequestPtr req);

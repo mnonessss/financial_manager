@@ -38,6 +38,25 @@ std::string welcome::genText(const DrTemplateData& welcome_view_data)
 	welcome_tmp_stream << "</html>\n";
 welcome_tmp_stream<<"\n";
 welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
+welcome_tmp_stream<<"\n";
 if(layoutName.empty())
 {
 std::string ret{std::move(welcome_tmp_stream.str())};

@@ -7,7 +7,6 @@
 
 #include "Account.h"
 #include <drogon/utils/Utilities.h>
-#include <drogon/orm/CoroMapper.h>
 #include <string>
 
 using namespace drogon;
@@ -20,6 +19,7 @@ const std::string Account::Cols::_account_type = "\"account_type\"";
 const std::string Account::Cols::_account_name = "\"account_name\"";
 const std::string Account::Cols::_balance = "\"balance\"";
 const std::string Account::Cols::_created_at = "\"created_at\"";
+const std::string Account::Cols::_is_family = "\"is_family\"";
 const std::string Account::primaryKeyName = "id";
 const bool Account::hasPrimaryKey = true;
 const std::string Account::tableName = "\"account\"";
@@ -30,7 +30,8 @@ const std::vector<typename Account::MetaData> Account::metaData_={
 {"account_type","std::string","USER-DEFINED",0,0,0,1},
 {"account_name","std::string","text",0,0,0,1},
 {"balance","std::string","numeric",0,0,0,1},
-{"created_at","::trantor::Date","timestamp without time zone",0,0,0,1}
+{"created_at","::trantor::Date","timestamp without time zone",0,0,0,1},
+{"is_family","bool","boolean",1,0,0,1}
 };
 const std::string &Account::getColumnName(size_t index) noexcept(false)
 {
@@ -83,11 +84,15 @@ Account::Account(const Row &r, const ssize_t indexOffset) noexcept
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
         }
+        if(!r["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(r["is_family"].as<bool>());
+        }
     }
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 6 > r.size())
+        if(offset + 7 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -141,13 +146,18 @@ Account::Account(const Row &r, const ssize_t indexOffset) noexcept
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
         }
+        index = offset + 6;
+        if(!r[index].isNull())
+        {
+            isFamily_=std::make_shared<bool>(r[index].as<bool>());
+        }
     }
 
 }
 
 Account::Account(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 6)
+    if(pMasqueradingVector.size() != 7)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -216,6 +226,14 @@ Account::Account(const Json::Value &pJson, const std::vector<std::string> &pMasq
                 }
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
+        }
+    }
+    if(!pMasqueradingVector[6].empty() && pJson.isMember(pMasqueradingVector[6]))
+    {
+        dirtyFlag_[6] = true;
+        if(!pJson[pMasqueradingVector[6]].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson[pMasqueradingVector[6]].asBool());
         }
     }
 }
@@ -288,12 +306,20 @@ Account::Account(const Json::Value &pJson) noexcept(false)
             }
         }
     }
+    if(pJson.isMember("is_family"))
+    {
+        dirtyFlag_[6]=true;
+        if(!pJson["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson["is_family"].asBool());
+        }
+    }
 }
 
 void Account::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 6)
+    if(pMasqueradingVector.size() != 7)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -363,6 +389,14 @@ void Account::updateByMasqueradedJson(const Json::Value &pJson,
             }
         }
     }
+    if(!pMasqueradingVector[6].empty() && pJson.isMember(pMasqueradingVector[6]))
+    {
+        dirtyFlag_[6] = true;
+        if(!pJson[pMasqueradingVector[6]].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson[pMasqueradingVector[6]].asBool());
+        }
+    }
 }
 
 void Account::updateByJson(const Json::Value &pJson) noexcept(false)
@@ -430,6 +464,14 @@ void Account::updateByJson(const Json::Value &pJson) noexcept(false)
                 }
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
+        }
+    }
+    if(pJson.isMember("is_family"))
+    {
+        dirtyFlag_[6] = true;
+        if(!pJson["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson["is_family"].asBool());
         }
     }
 }
@@ -556,6 +598,23 @@ void Account::setCreatedAt(const ::trantor::Date &pCreatedAt) noexcept
     dirtyFlag_[5] = true;
 }
 
+const bool &Account::getValueOfIsFamily() const noexcept
+{
+    static const bool defaultValue = bool();
+    if(isFamily_)
+        return *isFamily_;
+    return defaultValue;
+}
+const std::shared_ptr<bool> &Account::getIsFamily() const noexcept
+{
+    return isFamily_;
+}
+void Account::setIsFamily(const bool &pIsFamily) noexcept
+{
+    isFamily_ = std::make_shared<bool>(pIsFamily);
+    dirtyFlag_[6] = true;
+}
+
 void Account::updateId(const uint64_t id)
 {
 }
@@ -567,7 +626,8 @@ const std::vector<std::string> &Account::insertColumns() noexcept
         "account_type",
         "account_name",
         "balance",
-        "created_at"
+        "created_at",
+        "is_family"
     };
     return inCols;
 }
@@ -629,6 +689,17 @@ void Account::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[6])
+    {
+        if(getIsFamily())
+        {
+            binder << getValueOfIsFamily();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 
 const std::vector<std::string> Account::updateColumns() const
@@ -653,6 +724,10 @@ const std::vector<std::string> Account::updateColumns() const
     if(dirtyFlag_[5])
     {
         ret.push_back(getColumnName(5));
+    }
+    if(dirtyFlag_[6])
+    {
+        ret.push_back(getColumnName(6));
     }
     return ret;
 }
@@ -714,6 +789,17 @@ void Account::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[6])
+    {
+        if(getIsFamily())
+        {
+            binder << getValueOfIsFamily();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 Json::Value Account::toJson() const
 {
@@ -766,6 +852,14 @@ Json::Value Account::toJson() const
     {
         ret["created_at"]=Json::Value();
     }
+    if(getIsFamily())
+    {
+        ret["is_family"]=getValueOfIsFamily();
+    }
+    else
+    {
+        ret["is_family"]=Json::Value();
+    }
     return ret;
 }
 
@@ -778,7 +872,7 @@ Json::Value Account::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 6)
+    if(pMasqueradingVector.size() == 7)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -846,6 +940,17 @@ Json::Value Account::toMasqueradedJson(
                 ret[pMasqueradingVector[5]]=Json::Value();
             }
         }
+        if(!pMasqueradingVector[6].empty())
+        {
+            if(getIsFamily())
+            {
+                ret[pMasqueradingVector[6]]=getValueOfIsFamily();
+            }
+            else
+            {
+                ret[pMasqueradingVector[6]]=Json::Value();
+            }
+        }
         return ret;
     }
     LOG_ERROR << "Masquerade failed";
@@ -897,6 +1002,14 @@ Json::Value Account::toMasqueradedJson(
     {
         ret["created_at"]=Json::Value();
     }
+    if(getIsFamily())
+    {
+        ret["is_family"]=getValueOfIsFamily();
+    }
+    else
+    {
+        ret["is_family"]=Json::Value();
+    }
     return ret;
 }
 
@@ -947,13 +1060,18 @@ bool Account::validateJsonForCreation(const Json::Value &pJson, std::string &err
         if(!validJsonOfField(5, "created_at", pJson["created_at"], err, true))
             return false;
     }
+    if(pJson.isMember("is_family"))
+    {
+        if(!validJsonOfField(6, "is_family", pJson["is_family"], err, true))
+            return false;
+    }
     return true;
 }
 bool Account::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                                                  const std::vector<std::string> &pMasqueradingVector,
                                                  std::string &err)
 {
-    if(pMasqueradingVector.size() != 6)
+    if(pMasqueradingVector.size() != 7)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1022,6 +1140,14 @@ bool Account::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                   return false;
           }
       }
+      if(!pMasqueradingVector[6].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[6]))
+          {
+              if(!validJsonOfField(6, pMasqueradingVector[6], pJson[pMasqueradingVector[6]], err, true))
+                  return false;
+          }
+      }
     }
     catch(const Json::LogicError &e)
     {
@@ -1067,13 +1193,18 @@ bool Account::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(5, "created_at", pJson["created_at"], err, false))
             return false;
     }
+    if(pJson.isMember("is_family"))
+    {
+        if(!validJsonOfField(6, "is_family", pJson["is_family"], err, false))
+            return false;
+    }
     return true;
 }
 bool Account::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
                                                const std::vector<std::string> &pMasqueradingVector,
                                                std::string &err)
 {
-    if(pMasqueradingVector.size() != 6)
+    if(pMasqueradingVector.size() != 7)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1112,6 +1243,11 @@ bool Account::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
       if(!pMasqueradingVector[5].empty() && pJson.isMember(pMasqueradingVector[5]))
       {
           if(!validJsonOfField(5, pMasqueradingVector[5], pJson[pMasqueradingVector[5]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[6].empty() && pJson.isMember(pMasqueradingVector[6]))
+      {
+          if(!validJsonOfField(6, pMasqueradingVector[6], pJson[pMasqueradingVector[6]], err, false))
               return false;
       }
     }
@@ -1202,6 +1338,18 @@ bool Account::validJsonOfField(size_t index,
                 return false;
             }
             if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
+            break;
+        case 6:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isBool())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;

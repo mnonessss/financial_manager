@@ -12,9 +12,9 @@ public:
     METHOD_LIST_BEGIN
         ADD_METHOD_TO(AccountController::createAccount, "/accounts", drogon::Post);
         ADD_METHOD_TO(AccountController::GetAccounts, "/accounts", drogon::Get);
-        ADD_METHOD_TO(AccountController::GetAccountById, "/accounts/{1}", drogon::Get);
-        ADD_METHOD_TO(AccountController::UpdateAccount, "/accounts/{1}", drogon::Put);
-        ADD_METHOD_TO(AccountController::DeleteAccount, "/accounts/{1}", drogon::Delete);
+        ADD_METHOD_TO(AccountController::GetAccountById, "/accounts/{accountId}", drogon::Get);
+        ADD_METHOD_TO(AccountController::UpdateAccount, "/accounts/{accountId}", drogon::Put);
+        ADD_METHOD_TO(AccountController::DeleteAccount, "/accounts/{accountId}", drogon::Delete);
         ADD_METHOD_TO(AccountController::showCreateAccountForm, "/accounts/create", drogon::Get);
     METHOD_LIST_END
 

@@ -17,6 +17,7 @@ const std::string Category::Cols::_id = "\"id\"";
 const std::string Category::Cols::_id_user = "\"id_user\"";
 const std::string Category::Cols::_name = "\"name\"";
 const std::string Category::Cols::_type = "\"type\"";
+const std::string Category::Cols::_is_family = "\"is_family\"";
 const std::string Category::primaryKeyName = "id";
 const bool Category::hasPrimaryKey = true;
 const std::string Category::tableName = "\"category\"";
@@ -25,7 +26,8 @@ const std::vector<typename Category::MetaData> Category::metaData_={
 {"id","int32_t","integer",4,1,1,1},
 {"id_user","int32_t","integer",4,0,0,1},
 {"name","std::string","text",0,0,0,1},
-{"type","std::string","USER-DEFINED",0,0,0,1}
+{"type","std::string","USER-DEFINED",0,0,0,1},
+{"is_family","bool","boolean",1,0,0,1}
 };
 const std::string &Category::getColumnName(size_t index) noexcept(false)
 {
@@ -52,11 +54,15 @@ Category::Category(const Row &r, const ssize_t indexOffset) noexcept
         {
             type_=std::make_shared<std::string>(r["type"].as<std::string>());
         }
+        if(!r["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(r["is_family"].as<bool>());
+        }
     }
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 4 > r.size())
+        if(offset + 5 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -82,13 +88,18 @@ Category::Category(const Row &r, const ssize_t indexOffset) noexcept
         {
             type_=std::make_shared<std::string>(r[index].as<std::string>());
         }
+        index = offset + 4;
+        if(!r[index].isNull())
+        {
+            isFamily_=std::make_shared<bool>(r[index].as<bool>());
+        }
     }
 
 }
 
 Category::Category(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 5)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -123,6 +134,14 @@ Category::Category(const Json::Value &pJson, const std::vector<std::string> &pMa
         if(!pJson[pMasqueradingVector[3]].isNull())
         {
             type_=std::make_shared<std::string>(pJson[pMasqueradingVector[3]].asString());
+        }
+    }
+    if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+    {
+        dirtyFlag_[4] = true;
+        if(!pJson[pMasqueradingVector[4]].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson[pMasqueradingVector[4]].asBool());
         }
     }
 }
@@ -161,12 +180,20 @@ Category::Category(const Json::Value &pJson) noexcept(false)
             type_=std::make_shared<std::string>(pJson["type"].asString());
         }
     }
+    if(pJson.isMember("is_family"))
+    {
+        dirtyFlag_[4]=true;
+        if(!pJson["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson["is_family"].asBool());
+        }
+    }
 }
 
 void Category::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 5)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -202,6 +229,14 @@ void Category::updateByMasqueradedJson(const Json::Value &pJson,
             type_=std::make_shared<std::string>(pJson[pMasqueradingVector[3]].asString());
         }
     }
+    if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+    {
+        dirtyFlag_[4] = true;
+        if(!pJson[pMasqueradingVector[4]].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson[pMasqueradingVector[4]].asBool());
+        }
+    }
 }
 
 void Category::updateByJson(const Json::Value &pJson) noexcept(false)
@@ -235,6 +270,14 @@ void Category::updateByJson(const Json::Value &pJson) noexcept(false)
         if(!pJson["type"].isNull())
         {
             type_=std::make_shared<std::string>(pJson["type"].asString());
+        }
+    }
+    if(pJson.isMember("is_family"))
+    {
+        dirtyFlag_[4] = true;
+        if(!pJson["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson["is_family"].asBool());
         }
     }
 }
@@ -322,6 +365,23 @@ void Category::setType(std::string &&pType) noexcept
     dirtyFlag_[3] = true;
 }
 
+const bool &Category::getValueOfIsFamily() const noexcept
+{
+    static const bool defaultValue = bool();
+    if(isFamily_)
+        return *isFamily_;
+    return defaultValue;
+}
+const std::shared_ptr<bool> &Category::getIsFamily() const noexcept
+{
+    return isFamily_;
+}
+void Category::setIsFamily(const bool &pIsFamily) noexcept
+{
+    isFamily_ = std::make_shared<bool>(pIsFamily);
+    dirtyFlag_[4] = true;
+}
+
 void Category::updateId(const uint64_t id)
 {
 }
@@ -331,7 +391,8 @@ const std::vector<std::string> &Category::insertColumns() noexcept
     static const std::vector<std::string> inCols={
         "id_user",
         "name",
-        "type"
+        "type",
+        "is_family"
     };
     return inCols;
 }
@@ -371,6 +432,17 @@ void Category::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[4])
+    {
+        if(getIsFamily())
+        {
+            binder << getValueOfIsFamily();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 
 const std::vector<std::string> Category::updateColumns() const
@@ -387,6 +459,10 @@ const std::vector<std::string> Category::updateColumns() const
     if(dirtyFlag_[3])
     {
         ret.push_back(getColumnName(3));
+    }
+    if(dirtyFlag_[4])
+    {
+        ret.push_back(getColumnName(4));
     }
     return ret;
 }
@@ -420,6 +496,17 @@ void Category::updateArgs(drogon::orm::internal::SqlBinder &binder) const
         if(getType())
         {
             binder << getValueOfType();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[4])
+    {
+        if(getIsFamily())
+        {
+            binder << getValueOfIsFamily();
         }
         else
         {
@@ -462,6 +549,14 @@ Json::Value Category::toJson() const
     {
         ret["type"]=Json::Value();
     }
+    if(getIsFamily())
+    {
+        ret["is_family"]=getValueOfIsFamily();
+    }
+    else
+    {
+        ret["is_family"]=Json::Value();
+    }
     return ret;
 }
 
@@ -474,7 +569,7 @@ Json::Value Category::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 4)
+    if(pMasqueradingVector.size() == 5)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -520,6 +615,17 @@ Json::Value Category::toMasqueradedJson(
                 ret[pMasqueradingVector[3]]=Json::Value();
             }
         }
+        if(!pMasqueradingVector[4].empty())
+        {
+            if(getIsFamily())
+            {
+                ret[pMasqueradingVector[4]]=getValueOfIsFamily();
+            }
+            else
+            {
+                ret[pMasqueradingVector[4]]=Json::Value();
+            }
+        }
         return ret;
     }
     LOG_ERROR << "Masquerade failed";
@@ -554,6 +660,14 @@ Json::Value Category::toMasqueradedJson(
     else
     {
         ret["type"]=Json::Value();
+    }
+    if(getIsFamily())
+    {
+        ret["is_family"]=getValueOfIsFamily();
+    }
+    else
+    {
+        ret["is_family"]=Json::Value();
     }
     return ret;
 }
@@ -595,13 +709,18 @@ bool Category::validateJsonForCreation(const Json::Value &pJson, std::string &er
         err="The type column cannot be null";
         return false;
     }
+    if(pJson.isMember("is_family"))
+    {
+        if(!validJsonOfField(4, "is_family", pJson["is_family"], err, true))
+            return false;
+    }
     return true;
 }
 bool Category::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                                                   const std::vector<std::string> &pMasqueradingVector,
                                                   std::string &err)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 5)
     {
         err = "Bad masquerading vector";
         return false;
@@ -654,6 +773,14 @@ bool Category::validateMasqueradedJsonForCreation(const Json::Value &pJson,
             return false;
         }
       }
+      if(!pMasqueradingVector[4].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[4]))
+          {
+              if(!validJsonOfField(4, pMasqueradingVector[4], pJson[pMasqueradingVector[4]], err, true))
+                  return false;
+          }
+      }
     }
     catch(const Json::LogicError &e)
     {
@@ -689,13 +816,18 @@ bool Category::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(3, "type", pJson["type"], err, false))
             return false;
     }
+    if(pJson.isMember("is_family"))
+    {
+        if(!validJsonOfField(4, "is_family", pJson["is_family"], err, false))
+            return false;
+    }
     return true;
 }
 bool Category::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
                                                 const std::vector<std::string> &pMasqueradingVector,
                                                 std::string &err)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 5)
     {
         err = "Bad masquerading vector";
         return false;
@@ -724,6 +856,11 @@ bool Category::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
       if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
       {
           if(!validJsonOfField(3, pMasqueradingVector[3], pJson[pMasqueradingVector[3]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+      {
+          if(!validJsonOfField(4, pMasqueradingVector[4], pJson[pMasqueradingVector[4]], err, false))
               return false;
       }
     }
@@ -790,6 +927,18 @@ bool Category::validJsonOfField(size_t index,
                 return false;
             }
             if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
+            break;
+        case 4:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isBool())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;

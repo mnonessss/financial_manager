@@ -20,6 +20,7 @@ const std::string Budgets::Cols::_month = "\"month\"";
 const std::string Budgets::Cols::_year = "\"year\"";
 const std::string Budgets::Cols::_limit_amount = "\"limit_amount\"";
 const std::string Budgets::Cols::_created_at = "\"created_at\"";
+const std::string Budgets::Cols::_is_family = "\"is_family\"";
 const std::string Budgets::primaryKeyName = "id";
 const bool Budgets::hasPrimaryKey = true;
 const std::string Budgets::tableName = "\"budgets\"";
@@ -31,7 +32,8 @@ const std::vector<typename Budgets::MetaData> Budgets::metaData_={
 {"month","int32_t","integer",4,0,0,1},
 {"year","int32_t","integer",4,0,0,1},
 {"limit_amount","std::string","numeric",0,0,0,1},
-{"created_at","::trantor::Date","timestamp without time zone",0,0,0,1}
+{"created_at","::trantor::Date","timestamp without time zone",0,0,0,1},
+{"is_family","bool","boolean",1,0,0,1}
 };
 const std::string &Budgets::getColumnName(size_t index) noexcept(false)
 {
@@ -88,11 +90,15 @@ Budgets::Budgets(const Row &r, const ssize_t indexOffset) noexcept
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
         }
+        if(!r["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(r["is_family"].as<bool>());
+        }
     }
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 7 > r.size())
+        if(offset + 8 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -151,13 +157,18 @@ Budgets::Budgets(const Row &r, const ssize_t indexOffset) noexcept
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
         }
+        index = offset + 7;
+        if(!r[index].isNull())
+        {
+            isFamily_=std::make_shared<bool>(r[index].as<bool>());
+        }
     }
 
 }
 
 Budgets::Budgets(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 7)
+    if(pMasqueradingVector.size() != 8)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -234,6 +245,14 @@ Budgets::Budgets(const Json::Value &pJson, const std::vector<std::string> &pMasq
                 }
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
+        }
+    }
+    if(!pMasqueradingVector[7].empty() && pJson.isMember(pMasqueradingVector[7]))
+    {
+        dirtyFlag_[7] = true;
+        if(!pJson[pMasqueradingVector[7]].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson[pMasqueradingVector[7]].asBool());
         }
     }
 }
@@ -314,12 +333,20 @@ Budgets::Budgets(const Json::Value &pJson) noexcept(false)
             }
         }
     }
+    if(pJson.isMember("is_family"))
+    {
+        dirtyFlag_[7]=true;
+        if(!pJson["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson["is_family"].asBool());
+        }
+    }
 }
 
 void Budgets::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 7)
+    if(pMasqueradingVector.size() != 8)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -397,6 +424,14 @@ void Budgets::updateByMasqueradedJson(const Json::Value &pJson,
             }
         }
     }
+    if(!pMasqueradingVector[7].empty() && pJson.isMember(pMasqueradingVector[7]))
+    {
+        dirtyFlag_[7] = true;
+        if(!pJson[pMasqueradingVector[7]].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson[pMasqueradingVector[7]].asBool());
+        }
+    }
 }
 
 void Budgets::updateByJson(const Json::Value &pJson) noexcept(false)
@@ -472,6 +507,14 @@ void Budgets::updateByJson(const Json::Value &pJson) noexcept(false)
                 }
                 createdAt_=std::make_shared<::trantor::Date>(t*1000000+decimalNum);
             }
+        }
+    }
+    if(pJson.isMember("is_family"))
+    {
+        dirtyFlag_[7] = true;
+        if(!pJson["is_family"].isNull())
+        {
+            isFamily_=std::make_shared<bool>(pJson["is_family"].asBool());
         }
     }
 }
@@ -605,6 +648,23 @@ void Budgets::setCreatedAt(const ::trantor::Date &pCreatedAt) noexcept
     dirtyFlag_[6] = true;
 }
 
+const bool &Budgets::getValueOfIsFamily() const noexcept
+{
+    static const bool defaultValue = bool();
+    if(isFamily_)
+        return *isFamily_;
+    return defaultValue;
+}
+const std::shared_ptr<bool> &Budgets::getIsFamily() const noexcept
+{
+    return isFamily_;
+}
+void Budgets::setIsFamily(const bool &pIsFamily) noexcept
+{
+    isFamily_ = std::make_shared<bool>(pIsFamily);
+    dirtyFlag_[7] = true;
+}
+
 void Budgets::updateId(const uint64_t id)
 {
 }
@@ -617,7 +677,8 @@ const std::vector<std::string> &Budgets::insertColumns() noexcept
         "month",
         "year",
         "limit_amount",
-        "created_at"
+        "created_at",
+        "is_family"
     };
     return inCols;
 }
@@ -690,6 +751,17 @@ void Budgets::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[7])
+    {
+        if(getIsFamily())
+        {
+            binder << getValueOfIsFamily();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 
 const std::vector<std::string> Budgets::updateColumns() const
@@ -718,6 +790,10 @@ const std::vector<std::string> Budgets::updateColumns() const
     if(dirtyFlag_[6])
     {
         ret.push_back(getColumnName(6));
+    }
+    if(dirtyFlag_[7])
+    {
+        ret.push_back(getColumnName(7));
     }
     return ret;
 }
@@ -790,6 +866,17 @@ void Budgets::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[7])
+    {
+        if(getIsFamily())
+        {
+            binder << getValueOfIsFamily();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 Json::Value Budgets::toJson() const
 {
@@ -850,6 +937,14 @@ Json::Value Budgets::toJson() const
     {
         ret["created_at"]=Json::Value();
     }
+    if(getIsFamily())
+    {
+        ret["is_family"]=getValueOfIsFamily();
+    }
+    else
+    {
+        ret["is_family"]=Json::Value();
+    }
     return ret;
 }
 
@@ -862,7 +957,7 @@ Json::Value Budgets::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 7)
+    if(pMasqueradingVector.size() == 8)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -941,6 +1036,17 @@ Json::Value Budgets::toMasqueradedJson(
                 ret[pMasqueradingVector[6]]=Json::Value();
             }
         }
+        if(!pMasqueradingVector[7].empty())
+        {
+            if(getIsFamily())
+            {
+                ret[pMasqueradingVector[7]]=getValueOfIsFamily();
+            }
+            else
+            {
+                ret[pMasqueradingVector[7]]=Json::Value();
+            }
+        }
         return ret;
     }
     LOG_ERROR << "Masquerade failed";
@@ -999,6 +1105,14 @@ Json::Value Budgets::toMasqueradedJson(
     else
     {
         ret["created_at"]=Json::Value();
+    }
+    if(getIsFamily())
+    {
+        ret["is_family"]=getValueOfIsFamily();
+    }
+    else
+    {
+        ret["is_family"]=Json::Value();
     }
     return ret;
 }
@@ -1065,13 +1179,18 @@ bool Budgets::validateJsonForCreation(const Json::Value &pJson, std::string &err
         if(!validJsonOfField(6, "created_at", pJson["created_at"], err, true))
             return false;
     }
+    if(pJson.isMember("is_family"))
+    {
+        if(!validJsonOfField(7, "is_family", pJson["is_family"], err, true))
+            return false;
+    }
     return true;
 }
 bool Budgets::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                                                  const std::vector<std::string> &pMasqueradingVector,
                                                  std::string &err)
 {
-    if(pMasqueradingVector.size() != 7)
+    if(pMasqueradingVector.size() != 8)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1158,6 +1277,14 @@ bool Budgets::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                   return false;
           }
       }
+      if(!pMasqueradingVector[7].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[7]))
+          {
+              if(!validJsonOfField(7, pMasqueradingVector[7], pJson[pMasqueradingVector[7]], err, true))
+                  return false;
+          }
+      }
     }
     catch(const Json::LogicError &e)
     {
@@ -1208,13 +1335,18 @@ bool Budgets::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(6, "created_at", pJson["created_at"], err, false))
             return false;
     }
+    if(pJson.isMember("is_family"))
+    {
+        if(!validJsonOfField(7, "is_family", pJson["is_family"], err, false))
+            return false;
+    }
     return true;
 }
 bool Budgets::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
                                                const std::vector<std::string> &pMasqueradingVector,
                                                std::string &err)
 {
-    if(pMasqueradingVector.size() != 7)
+    if(pMasqueradingVector.size() != 8)
     {
         err = "Bad masquerading vector";
         return false;
@@ -1258,6 +1390,11 @@ bool Budgets::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
       if(!pMasqueradingVector[6].empty() && pJson.isMember(pMasqueradingVector[6]))
       {
           if(!validJsonOfField(6, pMasqueradingVector[6], pJson[pMasqueradingVector[6]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[7].empty() && pJson.isMember(pMasqueradingVector[7]))
+      {
+          if(!validJsonOfField(7, pMasqueradingVector[7], pJson[pMasqueradingVector[7]], err, false))
               return false;
       }
     }
@@ -1360,6 +1497,18 @@ bool Budgets::validJsonOfField(size_t index,
                 return false;
             }
             if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
+            break;
+        case 7:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isBool())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;
