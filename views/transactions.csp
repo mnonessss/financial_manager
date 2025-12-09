@@ -6,7 +6,10 @@
     <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
 </head>
 <body>
-    <h1>Транзакции</h1>
+    <h1><% if (typeof pageTitle !== 'undefined') { %><%= pageTitle %><% } else { %>Транзакции<% } %></h1>
+    <% if (typeof isFamily !== 'undefined' && isFamily) { %>
+        <p style="color: #666; font-style: italic;">Просмотр семейных транзакций (только просмотр, создание недоступно)</p>
+    <% } else { %>
     <form id="createTransactionForm">
         <label>Счёт
             <select name="id_account" id="accountSelect" required>
@@ -34,6 +37,8 @@
         </label>
         <button type="submit" id="submitBtn">Создать</button>
     </form>
+    <% } %>
+    <p><a href="/home">← Вернуться на главную</a></p>
 
     <h2>Список транзакций</h2>
     <div id="transactionsContainer">
@@ -58,10 +63,12 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
         if (!token) {
             window.location.href = '/auth/login';
         }
+        const urlParams = new URLSearchParams(window.location.search);
+        const isFamily = urlParams.get('family') === 'true';
 
         function formatDate(dateStr) {
             if (!dateStr) return '-';
@@ -103,7 +110,8 @@
             const tbody = document.getElementById('transactionsTableBody');
             
             try {
-                const resp = await fetch('/transactions', {
+                const url = '/transactions' + (isFamily ? '?family=true' : '');
+                const resp = await fetch(url, {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -273,8 +281,10 @@
         });
 
         // Загружаем счета, категории и транзакции при загрузке страницы
+        if (!isFamily) {
         loadAccounts();
         loadCategories();
+        }
         loadAccountsForDisplay().then(() => loadTransactions());
     </script>
 </body>

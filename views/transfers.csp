@@ -6,7 +6,10 @@
     <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
 </head>
 <body>
-    <h1>Переводы</h1>
+    <h1><% if (typeof pageTitle !== 'undefined') { %><%= pageTitle %><% } else { %>Переводы<% } %></h1>
+    <% if (typeof isFamily !== 'undefined' && isFamily) { %>
+        <p style="color: #666; font-style: italic;">Просмотр семейных переводов (только просмотр, создание недоступно)</p>
+    <% } else { %>
     <form id="createTransferForm">
         <label>Счёт-источник
             <select name="account_from" id="accountFromSelect" required>
@@ -24,6 +27,8 @@
         </label>
         <button type="submit" id="submitBtn">Создать перевод</button>
     </form>
+    <% } %>
+    <p><a href="/home">← Вернуться на главную</a></p>
 
     <h2>Список переводов</h2>
     <div id="transfersContainer">
@@ -47,10 +52,12 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
         if (!token) {
             window.location.href = '/auth/login';
         }
+        const urlParams = new URLSearchParams(window.location.search);
+        const isFamily = urlParams.get('family') === 'true';
 
         function formatDate(dateStr) {
             if (!dateStr) return '-';
@@ -92,7 +99,8 @@
             const tbody = document.getElementById('transfersTableBody');
             
             try {
-                const resp = await fetch('/transfers', {
+                const url = '/transfers' + (isFamily ? '?family=true' : '');
+                const resp = await fetch(url, {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -238,7 +246,9 @@
         });
 
         // Загружаем счета и переводы при загрузке страницы
+        if (!isFamily) {
         loadAccounts();
+        }
         loadAccountsForDisplay().then(() => loadTransfers());
     </script>
 </body>

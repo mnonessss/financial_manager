@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Создать семейный аккаунт</title>
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+    <style>
+        .error {
+            color: red;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        form {
+            max-width: 500px;
+            margin: 20px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Создать семейный аккаунт</h1>
+    
+    <% if (typeof hasError !== 'undefined' && hasError) { %>
+        <div class="error"><%= errorMessage %></div>
+    <% } %>
+    
+    <form id="createFamilyForm">
+        <label for="name">Название семьи:</label>
+        <input type="text" id="name" name="name" required placeholder="Например: Семья Ивановых">
+        <button type="submit">Создать семью</button>
+    </form>
+    
+    <p><a href="/home">Вернуться на главную</a></p>
+    
+    <script>
+        document.getElementById('createFamilyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const token = localStorage.getItem('authToken') || localStorage.getItem('token') || getCookie('token');
+            
+            try {
+                const response = await fetch('/api/family', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ name: name })
+                });
+                
+                if (response.ok) {
+                    alert('Семья успешно создана!');
+                    window.location.href = '/home';
+                } else {
+                    const error = await response.text();
+                    alert('Ошибка: ' + error);
+                }
+            } catch (error) {
+                alert('Ошибка при создании семьи: ' + error.message);
+            }
+        });
+        
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+    </script>
+</body>
+</html>
+

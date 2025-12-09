@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Присоединиться к семейному аккаунту</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .error {
+            color: red;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        p {
+            margin-top: 20px;
+        }
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<h1>Присоединиться к семейному аккаунту</h1>
+    <% if (typeof hasError !== 'undefined' && hasError) { %>
+        <div class="error"><%= errorMessage %></div>
+<% } %>
+
+<form method="POST" action="/api/family/join">
+    <input type="hidden" name="token" value="<%= token %>">
+        <input type="email" name="email" placeholder="Ваш email" value="<%= email || "" %>" required>
+    <input type="password" name="password" placeholder="Пароль" required>
+    <button type="submit">Войти и присоединиться</button>
+</form>
+
+<p>Ещё не зарегистрированы? 
+    <a href="/auth/register?token=<%= token %>">Создайте аккаунт</a>
+</p>
+</body>
+</html>
