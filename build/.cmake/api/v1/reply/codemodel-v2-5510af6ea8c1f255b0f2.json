@@ -10,7 +10,7 @@
 					[
 						1
 					],
-					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"jsonFile" : "directory-.-f5ebdc15457944623624.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.5"
@@ -24,7 +24,7 @@
 				},
 				{
 					"build" : "test",
-					"jsonFile" : "directory-test-Debug-451c0598f41488bb20b9.json",
+					"jsonFile" : "directory-test-451c0598f41488bb20b9.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.5"
@@ -38,7 +38,7 @@
 					]
 				}
 			],
-			"name" : "Debug",
+			"name" : "",
 			"projects" : 
 			[
 				{
@@ -74,14 +74,14 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "financial_manager::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-financial_manager-Debug-ce1d2726e483f866c1c8.json",
+					"jsonFile" : "target-financial_manager-9f26258ec2bbd48c11df.json",
 					"name" : "financial_manager",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 1,
 					"id" : "financial_manager_test::@36f028580bb02cc8272a",
-					"jsonFile" : "target-financial_manager_test-Debug-d9582a9c9c344c7433f5.json",
+					"jsonFile" : "target-financial_manager_test-545088b4bb78a9ffb219.json",
 					"name" : "financial_manager_test",
 					"projectIndex" : 1
 				}

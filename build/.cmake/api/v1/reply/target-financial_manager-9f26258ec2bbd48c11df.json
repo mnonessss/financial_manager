@@ -30,31 +30,31 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 9,
+				"line" : 10,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 26,
+				"line" : 27,
 				"parent" : 0
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 54,
+				"line" : 55,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 24,
+				"line" : 25,
 				"parent" : 0
 			},
 			{
 				"command" : 5,
 				"file" : 0,
-				"line" : 44,
+				"line" : 45,
 				"parent" : 0
 			},
 			{
@@ -66,7 +66,7 @@
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 57,
+				"line" : 58,
 				"parent" : 0
 			}
 		]
@@ -77,7 +77,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : " -std=c++20 -g"
+					"fragment" : " -std=c++20"
 				},
 				{
 					"fragment" : "-std=c++20"
@@ -137,7 +137,12 @@
 				24,
 				25,
 				26,
-				27
+				27,
+				28,
+				29,
+				30,
+				31,
+				32
 			]
 		}
 	],
@@ -147,7 +152,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "-std=c++20 -g",
+				"fragment" : "-std=c++20",
 				"role" : "flags"
 			},
 			{
@@ -242,25 +247,32 @@
 				24,
 				25,
 				26,
-				27
+				27,
+				28,
+				29,
+				30,
+				31,
+				32
 			]
 		},
 		{
 			"name" : "CMake Rules",
 			"sourceIndexes" : 
 			[
-				28,
-				29,
-				30,
-				31,
-				32,
 				33,
 				34,
 				35,
 				36,
 				37,
 				38,
-				39
+				39,
+				40,
+				41,
+				42,
+				43,
+				44,
+				45,
+				46
 			]
 		}
 	],
@@ -304,14 +316,28 @@
 			"backtrace" : 6,
 			"compileGroupIndex" : 0,
 			"isGenerated" : true,
-			"path" : "build/create_account.cc",
+			"path" : "build/create_family.cc",
 			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 6,
 			"compileGroupIndex" : 0,
 			"isGenerated" : true,
-			"path" : "build/home.cc",
+			"path" : "build/family_members.cc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 6,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "build/invite_family.cc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 6,
+			"compileGroupIndex" : 0,
+			"isGenerated" : true,
+			"path" : "build/join_family.cc",
 			"sourceGroupIndex" : 0
 		},
 		{
@@ -419,6 +445,24 @@
 		{
 			"backtrace" : 7,
 			"compileGroupIndex" : 0,
+			"path" : "models/Families.cc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 7,
+			"compileGroupIndex" : 0,
+			"path" : "models/FamilyInvite.cc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 7,
+			"compileGroupIndex" : 0,
+			"path" : "models/FamilyMembers.cc",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 7,
+			"compileGroupIndex" : 0,
 			"path" : "models/Transactions.cc",
 			"sourceGroupIndex" : 0
 		},
@@ -473,13 +517,25 @@
 		{
 			"backtrace" : 0,
 			"isGenerated" : true,
-			"path" : "build/create_account.h.rule",
+			"path" : "build/create_family.h.rule",
 			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 0,
 			"isGenerated" : true,
-			"path" : "build/home.h.rule",
+			"path" : "build/family_members.h.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/invite_family.h.rule",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"isGenerated" : true,
+			"path" : "build/join_family.h.rule",
 			"sourceGroupIndex" : 1
 		},
 		{

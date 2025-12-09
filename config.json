@@ -13,18 +13,6 @@
             "address": "0.0.0.0",
             "port": 9000,
             "https": false
-        },
-        {
-            "address": "0.0.0.0",
-            "port": 443,
-            "https": true,
-            
-            "cert": "",
-            "key": "",
-            "use_old_tls": false,
-            "ssl_conf": [
-               
-            ]
         }
     ],
     "db_clients": [
@@ -38,36 +26,14 @@
             "user": "postgres",
             "passwd": "900300Rf!",
             
-            "is_fast": false,
+            "is_fast": true,
             
-            "number_of_connections": 5,
+            "number_of_connections": 4,
             
             "timeout": 5,
             
             "auto_batch": true
             
-        }
-    ],
-    "redis_clients": [
-        {
-            
-            "name": "default",
-            
-            "host": "127.0.0.1",
-            
-            "port": 6379,
-            
-            "username": "",
-           
-            "passwd": "",
-            
-            "db": 0,
-            
-            "is_fast": false,
-             
-            "number_of_connections": 1,
-            
-            "timeout": -1.0
         }
     ],
     "app": {
@@ -127,10 +93,10 @@
         "load_dynamic_views": false,
         
         "dynamic_views_path": [
-            "./views"
+            "../views"
         ],
         
-        "dynamic_views_output_path": "",
+        "dynamic_views_output_path": "views",
         "json_parser_stack_limit": 1000,
         "enable_unicode_escaping_in_json": true,
         "float_precision_in_json": {
