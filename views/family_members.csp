@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Члены семьи</title>
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" />
+    <style>
+        .error {
+            color: red;
+            background-color: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .member-list {
+            margin: 20px 0;
+        }
+        .member-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+            background-color: #f9f9f9;
+        }
+        .owner-badge {
+            background-color: #ff9800;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Члены семьи: <%= familyName %></h1>
+    
+    <% if (typeof hasError !== 'undefined' && hasError) { %>
+        <div class="error"><%= errorMessage %></div>
+    <% } else { %>
+        <div id="membersContainer">
+            <p>Загрузка списка членов...</p>
+        </div>
+    <% } %>
+    
+    <p><a href="/home">Вернуться на главную</a></p>
+    
+    <script>
+        async function loadMembers() {
+            const token = localStorage.getItem('authToken') || localStorage.getItem('token') || getCookie('token');
+            const familyId = <%= familyId %>;
+            
+            try {
+                const response = await fetch(`/api/family/${familyId}/members`, {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (response.ok) {
+                    const members = await response.json();
+                    displayMembers(members);
+                } else {
+                    document.getElementById('membersContainer').innerHTML = 
+                        '<div class="error">Ошибка при загрузке списка членов</div>';
+                }
+            } catch (error) {
+                document.getElementById('membersContainer').innerHTML = 
+                    '<div class="error">Ошибка: ' + error.message + '</div>';
+            }
+        }
+        
+        function displayMembers(members) {
+            const container = document.getElementById('membersContainer');
+            
+            if (members.length === 0) {
+                container.innerHTML = '<p>В семье пока нет других членов.</p>';
+                return;
+            }
+            
+            let html = '<div class="member-list">';
+            members.forEach(member => {
+                html += `
+                    <div class="member-item">
+                        <strong>${member.name}</strong>
+                        ${member.is_owner ? '<span class="owner-badge">Владелец</span>' : ''}
+                        <p>Email: ${member.email}</p>
+                        <p>Присоединился: ${new Date(member.joined_at).toLocaleDateString('ru-RU')}</p>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+        
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        
+        <% if (typeof hasError === 'undefined' || !hasError) { %>
+            loadMembers();
+        <% } %>
+    </script>
+</body>
+</html>
+
